@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { PlusIcon, UserIcon, TrophyIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalTournaments: 0,
@@ -32,12 +32,6 @@ export default function AdminDashboard() {
         // Fetch real stats from the API
         const response = await axiosInstance.get('/api/admin/stats');
         setStats(response.data.stats);
-        
-        // Check for auth error
-        if (response.data.error) {
-          console.log('Stats error:', response.data.error);
-          // Don't show error toast for auth errors, as we're handling it in the UI
-        }
       } catch (error: any) {
         console.error('Error fetching stats:', error);
         
@@ -138,6 +132,46 @@ export default function AdminDashboard() {
     }
   }, [user]);
 
+  // If loading auth state, show loading spinner
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  // If not admin, show unauthorized message
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6">
+        <div className="bg-red-500/10 p-3 rounded-full mb-4">
+          <svg className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-white mb-3">Admin Access Required</h1>
+        <p className="text-gray-400 text-center mb-6 max-w-md">
+          You need to be logged in as an administrator to access this page.
+        </p>
+        <div className="flex space-x-4">
+          <Link 
+            href="/login" 
+            className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg transition-all duration-200"
+          >
+            Login
+          </Link>
+          <Link 
+            href="/" 
+            className="bg-gray-800 hover:bg-gray-700 text-white py-2 px-6 rounded-lg transition-all duration-200"
+          >
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="mb-8">
@@ -146,14 +180,6 @@ export default function AdminDashboard() {
           Manage tournaments, users, and view platform statistics
         </p>
       </div>
-
-      {/* Auth Error Alert */}
-      {user && user.role !== 'admin' && (
-        <div className="mb-6 bg-red-900/30 border border-red-700 rounded-lg p-4 text-red-200">
-          <h3 className="text-lg font-semibold mb-1">Admin Access Required</h3>
-          <p>You need admin privileges to access all features of this dashboard.</p>
-        </div>
-      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
@@ -250,17 +276,6 @@ export default function AdminDashboard() {
           >
             <TrophyIcon className="h-5 w-5 mr-2" />
             Manage Tournaments
-          </Link>
-        </div>
-        <div className="mt-4">
-          <Link 
-            href="/admin/bets" 
-            className="flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white py-3 px-4 rounded-lg transition-all duration-200"
-          >
-            <svg className="h-5 w-5 mr-2 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Manage Bets
           </Link>
         </div>
       </div>

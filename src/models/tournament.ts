@@ -24,6 +24,7 @@ export interface ITournament extends Document {
   startDate: Date;
   endDate: Date;
   game: string;
+  type: 'official' | 'custom';
   markets: mongoose.Types.ObjectId[] | IMarket[];
   createdAt: Date;
   updatedAt: Date;
@@ -53,6 +54,7 @@ const TournamentSchema: Schema = new Schema(
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     game: { type: String, required: true },
+    type: { type: String, enum: ['official', 'custom'], default: 'official' },
     markets: [{ type: Schema.Types.ObjectId, ref: 'Market' }],
   },
   { timestamps: true }

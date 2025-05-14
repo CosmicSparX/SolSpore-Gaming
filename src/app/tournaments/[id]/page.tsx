@@ -132,6 +132,18 @@ export default function TournamentPage() {
         if (id) {
           const response = await axios.get(`/api/tournaments/${id}`);
           const tournamentData = response.data.tournament;
+          
+          // Check for invalid image URLs and replace with placeholder
+          if (
+            !tournamentData.image || 
+            tournamentData.image.startsWith('blob:') ||
+            tournamentData.image === 'undefined' || 
+            tournamentData.image === 'null'
+          ) {
+            // Replace with placeholder
+            tournamentData.image = `https://placehold.co/600x400/3b82f6/FFFFFF.png?text=${encodeURIComponent(tournamentData.name)}`;
+          }
+          
           setTournament(tournamentData);
           setMarkets(tournamentData.markets || []);
         }
@@ -259,12 +271,29 @@ export default function TournamentPage() {
         {/* Tournament header */}
         <div className="relative rounded-xl overflow-hidden mb-10 shadow-lg">
           <div className="relative h-64 sm:h-80 bg-gradient-to-b from-blue-500 to-purple-600">
-            <Image
-              src={tournament.image}
-              alt={tournament.name}
-              fill
-              className="object-cover mix-blend-overlay"
-            />
+            {/* Handle all image types consistently */}
+            {tournament.image && (
+              <div
+                style={{
+                  backgroundImage: `url(${tournament.image})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  position: 'absolute',
+                  width: '100%',
+                  height: '100%',
+                  mixBlendMode: 'overlay'
+                }}
+                onError={() => {
+                  // If the background image fails to load, replace it with a placeholder
+                  // Note: this is just extra protection as we already check on data load
+                  const target = document.getElementById('tournament-image-bg');
+                  if (target) {
+                    target.style.backgroundImage = `url(https://placehold.co/600x400/3b82f6/FFFFFF.png?text=${encodeURIComponent(tournament.name)})`;
+                  }
+                }}
+                id="tournament-image-bg"
+              />
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
               <span className="inline-block bg-purple-500 text-white px-3 py-1 text-sm rounded-md mb-3 font-medium">
@@ -281,6 +310,8 @@ export default function TournamentPage() {
         {/* Tournament description */}
         <div className="mb-12">
           <p className="text-lg">{tournament.description}</p>
+          
+          {/* Remove debug information */}
         </div>
         
         {/* Markets section */}

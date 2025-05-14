@@ -3,32 +3,43 @@ import dbConnect from '@/lib/dbConnect';
 import { User } from '@/models/user';
 import { verify } from 'jsonwebtoken';
 
+// GET all users (admin only)
 export async function GET(request: NextRequest) {
   try {
-    // Get the token from the cookies
+    // Verify that the request comes from an admin
     const token = request.cookies.get('auth_token')?.value;
     
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
     
-    // Verify the token and check admin role
     try {
       const decoded = verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+      
       if (decoded.role !== 'admin') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        return NextResponse.json(
+          { error: 'Admin privileges required' },
+          { status: 403 }
+        );
       }
-    } catch (error) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    } catch (err) {
+      return NextResponse.json(
+        { error: 'Invalid token' },
+        { status: 401 }
+      );
     }
     
+    // Connect to database
     await dbConnect();
     
-    // Fetch all users
+    // Get all users (except password and salt)
     const users = await User.find({})
-      .select('username email role createdAt')
-      .sort({ createdAt: -1 })
-      .lean();
+      .select('-password -salt')
+      .sort({ createdAt: -1 }) // Newest first
+      .lean(); // Convert to plain JavaScript objects
     
     return NextResponse.json({ users }, { status: 200 });
   } catch (error) {

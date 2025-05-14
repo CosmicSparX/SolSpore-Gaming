@@ -4,28 +4,31 @@ import { verify } from 'jsonwebtoken';
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
-  // Check if the request is for an admin route
-  if (request.nextUrl.pathname.startsWith('/admin')) {
+  // Check if the request is for an admin API route
+  if (request.nextUrl.pathname.startsWith('/api/admin')) {
     // Get the token from the cookies
     const token = request.cookies.get('auth_token')?.value;
     
     if (!token) {
-      // Redirect to the login page we created with the redirect parameter
-      return NextResponse.redirect(new URL(`/login?redirect=${encodeURIComponent(request.nextUrl.pathname)}`, request.url));
+      // Return unauthorized for API requests
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     try {
       // Verify the token
       const decoded = verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
       
-      // Check if user is an admin
+      // Check if user is admin
       if (decoded.role !== 'admin') {
-        // Redirect to home if not an admin
-        return NextResponse.redirect(new URL('/', request.url));
+        // Return forbidden for non-admin users
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
+      
+      // Allow admin users to access admin API routes
+      return NextResponse.next();
     } catch (error) {
-      // Redirect to login if token is invalid
-      return NextResponse.redirect(new URL(`/login?redirect=${encodeURIComponent(request.nextUrl.pathname)}`, request.url));
+      // Token is invalid
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
   }
   
@@ -35,5 +38,5 @@ export async function middleware(request: NextRequest) {
 
 // See "Matching Paths" below to learn more
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/api/admin/:path*'],
 }; 
