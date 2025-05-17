@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "node scripts/vercel-build.js && next build",
     "vercel-build": "node scripts/vercel-build.js && next build",
+    "next-build": "next build",
     "start": "next start",
     "lint": "next lint",
     "seed": "ts-node --project tsconfig.json -r tsconfig-paths/register src/scripts/seed-data.ts",
