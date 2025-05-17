@@ -149,7 +149,7 @@ export default function Navbar() {
                         <div className="flex items-center px-3 py-1.5 rounded-full bg-gray-800 border border-gray-700">
                           <div className="w-6 h-6 relative mr-2">
                             <Image 
-                              src="https://placehold.co/200?text=SOL&font=roboto"
+                              src="/images/solana-logo.png"
                               alt="Solana Logo"
                               fill
                               className="rounded-full object-cover"

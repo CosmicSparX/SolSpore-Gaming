@@ -55,6 +55,10 @@ const nextConfig = {
     // Temporarily ignoring TypeScript errors during build when deploying
     ignoreBuildErrors: process.env.NODE_ENV === 'production',
   },
+  // Required for Vercel Docker deployment
+  experimental: {
+    outputFileTracingRoot: process.cwd(),
+  },
 }
 
 module.exports = nextConfig 

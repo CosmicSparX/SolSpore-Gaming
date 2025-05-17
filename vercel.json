@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
+  "buildCommand": "docker-compose build",
+  "outputDirectory": ".next",
+  "devCommand": "docker-compose up",
   "framework": "nextjs",
   "installCommand": "npm install",
   "regions": ["iad1"],
@@ -30,7 +31,13 @@
   ],
   "build": {
     "env": {
-      "NEXT_PUBLIC_VERCEL_ENV": "production"
+      "NEXT_PUBLIC_VERCEL_ENV": "production",
+      "NEXT_PUBLIC_DOCKER_ENABLED": "true"
+    }
+  },
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
     }
   }
 } 

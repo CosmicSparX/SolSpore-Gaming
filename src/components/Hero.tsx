@@ -152,7 +152,7 @@ export default function Hero() {
                 Powered by 
                 <span className="flex items-center">
                   <Image 
-                    src="https://placehold.co/200?text=SOL&font=roboto"
+                    src="/images/solana-logo.png"
                     alt="Solana Logo"
                     width={18}
                     height={18}
