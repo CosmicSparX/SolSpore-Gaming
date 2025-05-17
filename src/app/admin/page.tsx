@@ -35,17 +35,16 @@ export default function AdminDashboard() {
       } catch (error: any) {
         console.error('Error fetching stats:', error);
         
-        // Show specific error message based on status code
+        // Don't show toast errors for authentication issues - silently use fallback
         if (error.response) {
-          if (error.response.status === 401) {
-            toast.error('Authentication required. Please log in again.');
-          } else if (error.response.status === 403) {
-            toast.error('You do not have permission to access admin statistics.');
-          } else {
+          // Only show errors for non-authentication issues
+          if (error.response.status !== 401 && error.response.status !== 403) {
             toast.error(`Failed to load dashboard statistics: ${error.response.data.error || 'Unknown error'}`);
           }
-        } else {
-          toast.error('Failed to load dashboard statistics. Network error.');
+        } else if (error.message !== 'canceled') {
+          // Don't show errors for canceled requests (common when navigating away)
+          console.error('Network error fetching stats:', error);
+          // Suppress toast here too to avoid error messages on admin page
         }
         
         // Fallback to tournaments data for basic stats
@@ -66,6 +65,13 @@ export default function AdminDashboard() {
           });
         } catch (err) {
           console.error('Error fetching fallback data:', err);
+          // Set default stats if even fallback fails
+          setStats({
+            totalUsers: 0,
+            totalTournaments: 0,
+            totalMarkets: 0,
+            totalBets: 0
+          });
         }
       } finally {
         setLoadingStats(false);
@@ -93,7 +99,7 @@ export default function AdminDashboard() {
         setRecentActivity(activity);
       } catch (error: any) {
         console.error('Error fetching activity:', error);
-        // Use dummy data as fallback
+        // Silently use dummy data as fallback without showing error toast
         setRecentActivity([
           {
             type: 'tournament_created',

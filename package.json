@@ -4,14 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/vercel-build.js && next build",
+    "vercel-build": "node scripts/vercel-build.js && next build",
     "start": "next start",
     "lint": "next lint",
     "seed": "ts-node --project tsconfig.json -r tsconfig-paths/register src/scripts/seed-data.ts",
     "setup": "node scripts/setup-env.js",
     "create-env": "node scripts/create-env.js",
     "test-db": "node scripts/test-db-connection.js",
-    "create-admin": "node scripts/create-admin-interactive.js"
+    "create-admin": "node scripts/create-admin-interactive.js",
+    "settle-markets": "cross-env NODE_ENV=production ts-node --transpile-only -r tsconfig-paths/register src/scripts/settle-markets.ts",
+    "postinstall": "node scripts/vercel-build.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.2",
@@ -45,6 +48,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.6",
     "dotenv": "^16.5.0",
+    "sharp": "^0.34.1",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0"
   }

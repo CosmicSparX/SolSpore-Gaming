@@ -499,6 +499,7 @@ export default function TournamentPage() {
               noOdds: selectedMarket.noOdds
             }}
             outcome={selectedOutcome}
+            tournamentId={params.id as string}
           />
         )}
       </div>

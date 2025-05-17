@@ -38,14 +38,13 @@ interface Tournament {
   markets: Market[];
 }
 
-// Properly type params as Promise<{id: string}>
-export default function TournamentDetailPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+// Properly type params according to NextJS 14 requirements
+export default function TournamentDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
   const router = useRouter();
   
-  // Check if params is a Promise before using React.use()
-  const unwrappedParams = params instanceof Promise ? React.use(params) : params;
-  const tournamentId = unwrappedParams.id;
+  // No need to unwrap params since it's no longer a Promise or union type
+  const tournamentId = params.id;
   
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);

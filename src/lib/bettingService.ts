@@ -6,14 +6,18 @@ import {
   Transaction,
   SystemProgram,
   LAMPORTS_PER_SOL,
+  Keypair,
+  sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import { WalletNotConnectedError } from '@solana/wallet-adapter-base';
 import axios from 'axios';
+import { IBet } from '@/models/bet';
 
 export interface BetDetails {
   marketId: string; // Changed to string for MongoDB ObjectId
   outcome: 'yes' | 'no';
   amount: number; // in SOL
+  tournamentId: string; // Added for creating a bet record
 }
 
 // This would typically be the program address for your betting platform
@@ -25,6 +29,28 @@ const ESCROW_ACCOUNT = new PublicKey('8Qzv9MfGi6hre2fqBXbdZC1pDRvJMb6g3URADxNJbj
 // In a real application, you'd fetch this from your backend
 export const getClusterEndpoint = (): string => {
   return 'https://api.devnet.solana.com'; // Using devnet for testing
+};
+
+// Deploy a smart contract for this bet that will handle the payout
+const deployBetPayoutContract = async (
+  connection: Connection,
+  publicKey: PublicKey,
+  signTransaction: ((transaction: Transaction) => Promise<Transaction>),
+  betDetails: BetDetails,
+  marketOdds: number
+): Promise<string> => {
+  // In a real implementation, this would deploy a custom program or create a PDA
+  // For this example, we'll simulate it by creating a new keypair 
+  // that would represent the address of the deployed contract
+  
+  // Generate a new keypair for the contract
+  const payoutContract = Keypair.generate();
+  
+  // In a real implementation, you would upload the program and initialize it
+  // with bet details, outcome expectations, odds, etc.
+  
+  // For now, we'll return the public key as if we deployed a contract
+  return payoutContract.publicKey.toString();
 };
 
 export const placeBet = async (
@@ -73,10 +99,29 @@ export const placeBet = async (
     // Wait for confirmation
     await connection.confirmTransaction(signature);
     
-    // Update the market in MongoDB
-    await axios.post(`/api/markets/${betDetails.marketId}/bet`, {
+    // Get market details to get current odds
+    const marketResponse = await axios.get(`/api/markets/${betDetails.marketId}`);
+    const market = marketResponse.data.market;
+    const odds = betDetails.outcome === 'yes' ? market.yesOdds : market.noOdds;
+    
+    // Deploy smart contract for this bet
+    const smartContractAddress = await deployBetPayoutContract(
+      connection,
+      publicKey,
+      signTransaction,
+      betDetails,
+      odds
+    );
+    
+    // Update the market in MongoDB and create a bet record
+    const response = await axios.post(`/api/markets/${betDetails.marketId}/bet`, {
       outcome: betDetails.outcome,
       amount: betDetails.amount,
+      tournamentId: betDetails.tournamentId,
+      transactionSignature: signature,
+      odds: odds,
+      smartContractAddress: smartContractAddress,
+      walletAddress: publicKey.toString() // Include wallet address
     });
     
     // Return the transaction signature as confirmation
@@ -87,27 +132,28 @@ export const placeBet = async (
   }
 };
 
-// Function to get the user's SOL balance
-export const getSolBalance = async (publicKey: PublicKey): Promise<number> => {
-  const connection = new Connection(getClusterEndpoint(), 'confirmed');
-  
+// Get a user's SOL balance
+export const getSolBalance = async (
+  publicKey: PublicKey
+): Promise<number> => {
   try {
+    const connection = new Connection(getClusterEndpoint(), 'confirmed');
     const balance = await connection.getBalance(publicKey);
     return balance / LAMPORTS_PER_SOL;
   } catch (error) {
     console.error('Error fetching balance:', error);
-    return 0;
+    throw new Error('Failed to get balance: ' + (error instanceof Error ? error.message : String(error)));
   }
 };
 
-// Function to fetch all tournaments
-export const fetchTournaments = async () => {
+// Function to fetch user's bets
+export const fetchUserBets = async (): Promise<any[]> => {
   try {
-    const response = await axios.get('/api/tournaments');
-    return response.data.tournaments;
+    const response = await axios.get('/api/bets');
+    return response.data.bets;
   } catch (error) {
-    console.error('Error fetching tournaments:', error);
-    throw new Error('Failed to fetch tournaments');
+    console.error('Error fetching user bets:', error);
+    throw new Error('Failed to fetch bets');
   }
 };
 

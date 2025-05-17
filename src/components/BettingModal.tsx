@@ -19,10 +19,11 @@ interface BettingModalProps {
     yesOdds: number
     noOdds: number
   }
+  tournamentId: string
   outcome: 'yes' | 'no' | null
 }
 
-export default function BettingModal({ isOpen, onClose, market, outcome }: BettingModalProps) {
+export default function BettingModal({ isOpen, onClose, market, outcome, tournamentId }: BettingModalProps) {
   const [stakeAmount, setStakeAmount] = useState<string>('1.0')
   const [isConfirming, setIsConfirming] = useState<boolean>(false)
   const [betPlaced, setBetPlaced] = useState<boolean>(false)
@@ -124,7 +125,8 @@ export default function BettingModal({ isOpen, onClose, market, outcome }: Betti
       const betDetails: BetDetails = {
         marketId: market.id,
         outcome,
-        amount: stake
+        amount: stake,
+        tournamentId: tournamentId
       };
       
       // Place the bet on Solana

@@ -11,6 +11,9 @@ export interface IMarket extends Document {
   noOdds: number;
   yesStake: number;
   noStake: number;
+  status: 'open' | 'closed' | 'settled';
+  result: 'yes' | 'no' | null;
+  settlementTxSignature: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +44,20 @@ const MarketSchema: Schema = new Schema(
     noOdds: { type: Number, required: true, default: 2.0 },
     yesStake: { type: Number, required: true, default: 0 },
     noStake: { type: Number, required: true, default: 0 },
+    status: { 
+      type: String, 
+      enum: ['open', 'closed', 'settled'], 
+      default: 'open' 
+    },
+    result: { 
+      type: String, 
+      enum: ['yes', 'no', null], 
+      default: null 
+    },
+    settlementTxSignature: { 
+      type: String, 
+      default: null 
+    }
   },
   { timestamps: true }
 );

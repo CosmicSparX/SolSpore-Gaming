@@ -3,6 +3,11 @@ import dbConnect from '@/lib/dbConnect';
 import { User } from '@/models/user';
 import { sign } from 'jsonwebtoken';
 
+// Add a GET handler to fix build issues
+export async function GET() {
+  return NextResponse.json({ message: 'Google Auth API endpoint' });
+}
+
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
 import { Market } from '@/models/tournament';
+import { Bet } from '@/models/bet';
 import mongoose from 'mongoose';
+import { User } from '@/models/user';
 
 export async function POST(
   request: NextRequest,
@@ -14,21 +16,54 @@ export async function POST(
     // Validate that marketId is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
-        { error: 'Invalid market ID' },
+        { 
+          success: false,
+          error: 'Invalid market ID',
+          message: 'The provided market ID is not in a valid format.'
+        },
         { status: 400 }
       );
     }
     
-    await dbConnect();
+    try {
+      await dbConnect();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Database connection failed',
+          message: 'Could not connect to the database. Please try again later.'
+        },
+        { status: 503 }
+      );
+    }
     
     // Parse request body
-    const body = await request.json();
-    const { outcome, amount } = body;
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid request body',
+          message: 'The request body is not valid JSON.'
+        },
+        { status: 400 }
+      );
+    }
+    
+    const { outcome, amount, tournamentId, transactionSignature, odds, smartContractAddress, walletAddress } = body;
     
     // Validate required fields
-    if (!outcome || !amount) {
+    if (!outcome || !amount || !tournamentId || !transactionSignature || !walletAddress) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { 
+          success: false,
+          error: 'Missing required fields',
+          message: 'Please provide all required fields: outcome, amount, tournamentId, transactionSignature, and walletAddress.'
+        },
         { status: 400 }
       );
     }
@@ -36,7 +71,11 @@ export async function POST(
     // Validate outcome
     if (outcome !== 'yes' && outcome !== 'no') {
       return NextResponse.json(
-        { error: 'Invalid outcome. Must be "yes" or "no"' },
+        { 
+          success: false,
+          error: 'Invalid outcome. Must be "yes" or "no"',
+          message: 'The outcome must be either "yes" or "no".'
+        },
         { status: 400 }
       );
     }
@@ -45,17 +84,78 @@ export async function POST(
     const betAmount = parseFloat(amount);
     if (isNaN(betAmount) || betAmount <= 0) {
       return NextResponse.json(
-        { error: 'Invalid amount. Must be a positive number' },
+        { 
+          success: false,
+          error: 'Invalid amount. Must be a positive number',
+          message: 'The bet amount must be a positive number greater than zero.'
+        },
         { status: 400 }
       );
     }
     
-    // Find the market
-    const market = await Market.findById(id);
-    if (!market) {
+    // Find user by wallet address
+    // In a real system you'd verify a wallet signature as well
+    let user;
+    try {
+      user = await User.findOne({ walletAddress });
+      
+      // If no user found, create a guest user record
+      if (!user) {
+        try {
+          user = await User.create({
+            username: `guest_${walletAddress.substring(0, 8)}`,
+            email: `guest_${walletAddress.substring(0, 8)}@solspore.com`,
+            walletAddress,
+            role: 'user'
+          });
+        } catch (userCreateError: any) {
+          // Check if it's a duplicate key error
+          if (userCreateError.code === 11000) {
+            // Try to find again - someone else might have created it
+            user = await User.findOne({ walletAddress });
+            if (!user) {
+              throw new Error('Failed to create user account');
+            }
+          } else {
+            throw userCreateError;
+          }
+        }
+      }
+    } catch (userError) {
+      console.error('Error with user account:', userError);
       return NextResponse.json(
-        { error: 'Market not found' },
-        { status: 404 }
+        { 
+          success: false,
+          error: 'User account error',
+          message: 'Could not find or create a user account for this wallet.'
+        },
+        { status: 500 }
+      );
+    }
+    
+    // Find the market
+    let market;
+    try {
+      market = await Market.findById(id);
+      if (!market) {
+        return NextResponse.json(
+          { 
+            success: false,
+            error: 'Market not found',
+            message: 'The specified betting market could not be found.'
+          },
+          { status: 404 }
+        );
+      }
+    } catch (marketError) {
+      console.error('Error finding market:', marketError);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Database error',
+          message: 'Error occurred while retrieving market information.'
+        },
+        { status: 500 }
       );
     }
     
@@ -63,7 +163,23 @@ export async function POST(
     const now = new Date();
     if (market.closeTime < now) {
       return NextResponse.json(
-        { error: 'Market is closed' },
+        { 
+          success: false,
+          error: 'Market is closed',
+          message: 'This market is no longer accepting bets as it has closed.'
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Check if market is not open
+    if (market.status !== 'open') {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Market not available',
+          message: `This market is not open for betting. Current status: ${market.status}.`
+        },
         { status: 400 }
       );
     }
@@ -97,7 +213,62 @@ export async function POST(
     }
     
     // Save the updated market
-    await market.save();
+    try {
+      await market.save();
+    } catch (marketSaveError) {
+      console.error('Error saving market:', marketSaveError);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Database error',
+          message: 'Error occurred while updating market odds.'
+        },
+        { status: 500 }
+      );
+    }
+    
+    // Create the bet record
+    let bet;
+    try {
+      bet = new Bet({
+        userId: user._id,
+        marketId: id,
+        tournamentId,
+        outcome,
+        stake: betAmount,
+        odds: odds || (outcome === 'yes' ? market.yesOdds : market.noOdds),
+        timestamp: new Date(),
+        status: 'active',
+        transactionSignature,
+        smartContractAddress
+      });
+      
+      // Save the bet
+      await bet.save();
+    } catch (betSaveError) {
+      console.error('Error saving bet:', betSaveError);
+      
+      // Try to rollback the market update
+      try {
+        if (outcome === 'yes') {
+          market.yesStake -= betAmount;
+        } else {
+          market.noStake -= betAmount;
+        }
+        await market.save();
+      } catch (rollbackError) {
+        console.error('Error rolling back market update:', rollbackError);
+      }
+      
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Failed to save bet',
+          message: 'Your bet was processed but could not be saved in our records.'
+        },
+        { status: 500 }
+      );
+    }
     
     return NextResponse.json(
       {
@@ -109,14 +280,26 @@ export async function POST(
           noOdds: market.noOdds,
           yesStake: market.yesStake,
           noStake: market.noStake
+        },
+        bet: {
+          id: bet._id,
+          outcome: bet.outcome,
+          stake: bet.stake,
+          odds: bet.odds,
+          status: bet.status,
+          transactionSignature: bet.transactionSignature
         }
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error placing bet:', error);
+    console.error('Unhandled error placing bet:', error);
     return NextResponse.json(
-      { error: 'Failed to place bet' },
+      { 
+        success: false,
+        error: 'Failed to place bet',
+        message: error instanceof Error ? error.message : 'An unexpected error occurred while processing your bet.'
+      },
       { status: 500 }
     );
   }

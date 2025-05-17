@@ -10,6 +10,7 @@ export interface IUser extends Document {
   role: 'user' | 'admin';
   googleId?: string;
   profileImage?: string;
+  walletAddress?: string;
   createdAt: Date;
   updatedAt: Date;
   validatePassword(password: string): boolean;
@@ -53,6 +54,11 @@ const UserSchema: Schema = new Schema(
     },
     profileImage: {
       type: String
+    },
+    walletAddress: {
+      type: String,
+      unique: true,
+      sparse: true // Allow null/undefined values
     }
   },
   { timestamps: true }
