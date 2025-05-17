@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "docker-compose build",
+  "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "devCommand": "docker-compose up",
+  "devCommand": "npm run dev",
   "framework": "nextjs",
   "installCommand": "npm install",
   "regions": ["iad1"],
@@ -32,7 +32,7 @@
   "build": {
     "env": {
       "NEXT_PUBLIC_VERCEL_ENV": "production",
-      "NEXT_PUBLIC_DOCKER_ENABLED": "true"
+      "NEXT_PUBLIC_DOCKER_ENABLED": "false"
     }
   }
 } 
