@@ -45,7 +45,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuthStatus();
   }, []);
 
-  // Login with username and password
   const login = async (username: string, password: string) => {
     try {
       setLoading(true);
@@ -62,7 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Login with Google
   const googleLogin = async (googleData: any) => {
     try {
       setLoading(true);
@@ -75,7 +73,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         picture: googleData.picture
       });
       
-      setUser(response.data.user);
+      setUser({
+        ...response.data.user,
+        profileImage: response.data.user.profileImage || googleData.picture
+      });
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || 'Google login failed';
       setError(errorMessage);
@@ -85,7 +86,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Register new user
   const register = async (username: string, email: string, password: string) => {
     try {
       setLoading(true);
@@ -102,7 +102,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Logout
   const logout = async () => {
     try {
       setLoading(true);
