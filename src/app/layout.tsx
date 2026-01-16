@@ -5,6 +5,7 @@ import { WalletContextProvider } from '@/context/WalletContextProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { Toaster } from 'react-hot-toast'
 import { metadata } from './metadata'
+import Script from 'next/script'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,13 +24,14 @@ export default function RootLayout({
 
         <link href="https://hi.sol-spore.vercel.app/" hreflang="hi" rel="alternate" />
 
-        <script type="text/javascript" src="https://cdn.weglot.com/weglot.min.js"></script>
-        <script>
+        <script type="text/javascript" src="https://cdn.weglot.com/weglot.min.js" />
+        <Script id="weglot-init" strategy="beforeInteractive">
+          {`
             Weglot.initialize({
-                api_key: 'wg_ef05ffbfa9d4c4e66a86f8968d65bcf26'
+              api_key: 'wg_ef05ffbfa9d4c4e66a86f8968d65bcf26'
             });
-        </script>
-        </script>
+          `}
+        </Script>
       </head>
       <body className={`${inter.className} min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <AuthProvider>
