@@ -23,7 +23,12 @@ export default function RootLayout({
 
         <link href="https://hi.sol-spore.vercel.app/" hreflang="hi" rel="alternate" />
 
-        <script src="https://script-cdn.multilipi.com/static/JS/page_translations.js" multilipi-key="23eb36b7-b662-4a8b-82be-9b11f27674e8" mode="auto" data-pos-x="50" data-pos-y="50" crossorigin="anonymous" defer>
+        <script type="text/javascript" src="https://cdn.weglot.com/weglot.min.js"></script>
+        <script>
+            Weglot.initialize({
+                api_key: 'wg_ef05ffbfa9d4c4e66a86f8968d65bcf26'
+            });
+        </script>
         </script>
       </head>
       <body className={`${inter.className} min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
@@ -40,6 +45,6 @@ export default function RootLayout({
           </WalletContextProvider>
         </AuthProvider>
       </body>
-    </html>
+    </html >
   )
 } 
