@@ -20,18 +20,9 @@ export default function RootLayout({
         <link rel="icon" href="/favicons/favicon.ico" sizes="any" />
         <link rel="apple-touch-icon" href="/favicons/apple-touch-icon.png" />
         <link rel="manifest" href="/favicons/site.webmanifest" />
-        <link href="https://sol-spore.vercel.app/" hreflang="x-default" rel="alternate" />
-
-        <link href="https://hi.sol-spore.vercel.app/" hreflang="hi" rel="alternate" />
-
-        <script type="text/javascript" src="https://cdn.weglot.com/weglot.min.js" />
-        <Script id="weglot-init" strategy="beforeInteractive">
-          {`
-            Weglot.initialize({
-              api_key: 'wg_ef05ffbfa9d4c4e66a86f8968d65bcf26'
-            });
-          `}
-        </Script>
+        <link href="https://solspore.csx.codes/" hreflang="x-default" rel="alternate" />
+        <link href="https://hi.solspore.csx.codes/" hreflang="hi" rel="alternate" />
+        <script src="https://script-cdn.multilipi.com/static/JS/page_translations.js" multilipi-key="e14ec276-0630-4628-8983-fe14bd564027" mode="auto" data-pos-x="50" data-pos-y="50" crossorigin="anonymous" defer />
       </head>
       <body className={`${inter.className} min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800`}>
         <AuthProvider>
